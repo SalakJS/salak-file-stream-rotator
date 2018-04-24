@@ -8,7 +8,7 @@ const DEFAULTS = {
   DATE_FORMAT: 'YYYY-MM-DD'
 }
 
-class FileStreamRotator {
+class FileStreamRotator extends EventEmitter {
   /**
    * Options
    *  - filename
@@ -18,8 +18,9 @@ class FileStreamRotator {
    *  - audit_file
    */
   constructor (options = {}) {
+    super()
+
     const { filename, date_format: dateFormat = DEFAULTS.DATE_FORMAT, size, max_logs: maxLogs, audit_file: auditFile } = options
-    this.stream = new EventEmitter()
     this.filename = filename
     this.fileSize = null
     this.fileCount = 0
@@ -152,15 +153,9 @@ class FileStreamRotator {
   }
 
   _init () {
-    this.stream.on('new', (newLog) => {
+    this.on('new', (newLog) => {
       this._addLogToAudit(newLog)
     })
-
-    this.stream.end = (...args) => {
-      if (this.rotateStream) {
-        this.rotateStream.end.apply(this.rotateStream, args)
-      }
-    }
 
     if (fse.existsSync(this.filename)) {
       try {
@@ -207,11 +202,13 @@ class FileStreamRotator {
   }
 
   _moveLogFile (tempLog) {
+    console.log(tempLog)
     try {
       debug(`Move file ${this.filename} to ${tempLog}`)
       fse.ensureDirSync(path.dirname(tempLog))
       fse.renameSync(this.filename, tempLog)
-      this.stream.emit('new', tempLog)
+      this.emit('new', tempLog)
+      this.emit('rotate', this.filename, tempLog)
     } catch (err) {
       console.error(new Date(), '[FileStreamRotator] Failed to move file: ', this.filename, ' to: ', tempLog, ' Error: ', err)
     }
@@ -223,20 +220,26 @@ class FileStreamRotator {
 
   _bindStreamProxy (fileStream) {
     fileStream.on('close', () => {
-      this.stream.emit('close')
+      this.emit('close')
     })
 
     fileStream.on('finish', () => {
-      this.stream.emit('finish')
+      this.emit('finish')
     })
 
     fileStream.on('error', (err) => {
-      this.stream.emit('error', err)
+      this.emit('error', err)
     })
 
     fileStream.on('open', (fd) => {
-      this.stream.emit('open', fd)
+      this.emit('open', fd)
     })
+  }
+
+  end (...args) {
+    if (this.rotateStream) {
+      this.rotateStream.end.apply(this.rotateStream, args)
+    }
   }
 
   write (str, encoding) {
@@ -261,7 +264,6 @@ class FileStreamRotator {
       this._moveLogFile(newLog)
       this.rotateStream = fse.createWriteStream(this.filename, { flags: 'a' })
       this._bindStreamProxy(this.rotateStream)
-      this.stream.emit('rotate', this.filename, newLog)
     }
 
     this.rotateStream.write(str, encoding)

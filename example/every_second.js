@@ -6,8 +6,16 @@ const rotate = Rotate.getStream({
   max_logs: 20
 })
 
-rotate.stream.on('rotate', (newLog, oldLog) => {
+rotate.on('rotate', (newLog, oldLog) => {
   console.log('rotate: ', newLog, oldLog)
+}).on('open', (fd) => {
+  console.log('open', fd)
+}).on('error', (err) => {
+  console.log(err)
+}).on('close', () => {
+  console.log('close')
+}).on('finish', () => {
+  console.log('finish')
 })
 
 let counter = 0
@@ -16,6 +24,7 @@ function log () {
     counter++
     rotate.write('test\n')
     if (counter === 100) {
+      rotate.end()
       clearInterval(this.timer)
     }
   }, 1000)
