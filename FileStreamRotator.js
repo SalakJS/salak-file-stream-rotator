@@ -202,10 +202,8 @@ class FileStreamRotator extends EventEmitter {
   }
 
   _moveLogFile (tempLog) {
-    console.log(tempLog)
     try {
       debug(`Move file ${this.filename} to ${tempLog}`)
-      fse.ensureDirSync(path.dirname(tempLog))
       fse.renameSync(this.filename, tempLog)
       this.emit('new', tempLog)
       this.emit('rotate', this.filename, tempLog)
