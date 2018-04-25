@@ -1,6 +1,6 @@
 {
   "name": "salak-file-stream-rotator",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "rotate file for winston",
   "repository": "SalakJS/salak-file-stream-rotator",
   "main": "index.js",
