@@ -4,9 +4,12 @@ const debug = require('debug')('salak[FileStreamRotator]')
 const EventEmitter = require('events')
 const path = require('path')
 const crypto = require('crypto')
+const os = require('os')
 const DEFAULTS = {
   DATE_FORMAT: 'YYYY-MM-DD'
 }
+
+const isWindow = os.platform === 'win32'
 
 class FileStreamRotator extends EventEmitter {
   /**
@@ -160,7 +163,7 @@ class FileStreamRotator extends EventEmitter {
     if (fse.existsSync(this.filename)) {
       try {
         const fileState = fse.statSync(this.filename)
-        const oldDate = this._getDate(fileState.birthtime)
+        const oldDate = this._getDate(isWindow ? fileState.mtime : fileState.birthtime)
 
         if (oldDate !== this.curDate) {
           let tempLog = this.filename + '.' + oldDate
