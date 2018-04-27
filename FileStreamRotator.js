@@ -210,6 +210,7 @@ class FileStreamRotator extends EventEmitter {
       if (!fse.existsSync(tempLog)) {
         fse.renameSync(this.filename, tempLog)
       }
+      this.curSize = 0
       this.emit('new', tempLog)
       this.emit('rotate', this.filename, tempLog)
     } catch (err) {
